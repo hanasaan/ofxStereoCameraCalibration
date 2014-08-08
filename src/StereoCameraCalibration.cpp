@@ -195,7 +195,7 @@ void StereoCameraCalibration::load() {
                    0, 0, 0, 1);
         ofQuaternion stereoRotate = rotMat.getRotate();
         transformAb.setTranslation(stereoTranslate);
-        transformAb.setRotate(stereoRotate.conj());
+        transformAb.setRotate(stereoRotate);
     }
 }
 
