@@ -8,6 +8,7 @@ void SingleCameraCalibration::setup(string defaultFilePath, float chessBoardSize
     bRequestCalibrate = false;
     bAbsolute = absolute;
     calibrationFrameCount = 0;
+    notFoundFrameCount = 0;
     filePath = defaultFilePath;
     setPatternSize(10, 7);
     setSquareSize(chessBoardSize);
@@ -36,10 +37,12 @@ void SingleCameraCalibration::update(ofPixels& pixels) {
     if (!checkerBoardImage.isAllocated()) {
         imitate(checkerBoardImage, inputImage);
         checkerBoardImage.getPixelsRef().set(0);
+        checkerBoardImage.update();
     }
     if (!undistortedImage.isAllocated()) {
         imitate(undistortedImage, inputImage);
         undistortedImage.getPixelsRef().set(0);
+        undistortedImage.update();
     }
     
     if (bRequestCalibrate) {
@@ -55,6 +58,12 @@ void SingleCameraCalibration::update(ofPixels& pixels) {
             imagePoints.push_back(pointBuf);
             calibrate();
             bRequestCalibrate = false;
+        } else {
+            notFoundFrameCount++;
+            if (notFoundFrameCount > 3) {
+                notFoundFrameCount = 0;
+                bRequestCalibrate = false;
+            }
         }
         checkerBoardImage.update();
         
@@ -68,13 +77,30 @@ void SingleCameraCalibration::update(ofPixels& pixels) {
 void SingleCameraCalibration::draw(int x, int y, int w, int h) {
     if (bRequestCalibrate) {
         checkerBoardImage.draw(x, y, w, h);
+        ofPushStyle();
+        ofNoFill();
+        glLineWidth(10);
+        ofSetColor(ofColor::red);
+        ofRect(x, y, w, h);
+        ofPopStyle();
     } else {
         inputImage.draw(x, y, w, h);
+    }
+    
+    {
+        stringstream ss;
+        ss << "Size   : " << size() << endl;
+        ss << "RepErr : " << getReprojectionError() << endl;
+        ss << "Focal  : " << getDistortedIntrinsics().getFocalLength() << endl;
+        ss << "Principal Point : " << getDistortedIntrinsics().getPrincipalPoint() << endl;
+        ofDrawBitmapStringHighlight(ss.str(), x + 10, y + 20);
     }
 }
 
 void SingleCameraCalibration::drawUndistorted(int x, int y, int w, int h) {
-    undistortedImage.draw(x, y, w, h);
+    if (undistortedImage.isAllocated()) {
+        undistortedImage.draw(x, y, w, h);
+    }
 }
 
 bool SingleCameraCalibration::isCalibrated() {
@@ -183,6 +209,23 @@ void StereoCameraCalibration::draw(int x, int y, int w, int h) {
     b.draw(x + w/2, y, bw, bh);
     a.drawUndistorted(x,       y + h/2, aw, ah);
     b.drawUndistorted(x + w/2, y + h/2, bw, bh);
+    if (bRequestCalibrate) {
+        ofPushStyle();
+        ofNoFill();
+        glLineWidth(5);
+        ofSetColor(ofColor::red);
+        ofRect(x, y, w, h);
+        ofPopStyle();
+    }
+    
+    {
+        stringstream ss;
+        ss << "Stereo Calib Info" << endl;
+        ss << "Size   : " << size() << endl;
+        ss << "Translate : " << translation << endl;
+        ss << "Rotate  : " << rotation;
+        ofDrawBitmapStringHighlight(ss.str(), x + 10, y + h - 100, ofColor::red);
+    }
 }
 
 void StereoCameraCalibration::load() {
@@ -223,7 +266,7 @@ void StereoCameraCalibration::updateTransformAb() {
                     tm[0], tm[1], tm[2], 1);
     
     // convert coordinate system opencv to opengl
-    transformAb.postMultScale(1, -1, -1);
+    // transformAb.postMultScale(1, -1, -1);
 }
 
 void StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,

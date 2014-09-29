@@ -9,6 +9,7 @@ class SingleCameraCalibration : public ofxCv::Calibration {
 private:
     bool bRequestCalibrate;
     int  calibrationFrameCount;
+    int notFoundFrameCount;
     string filePath;
     bool bAbsolute;
     
