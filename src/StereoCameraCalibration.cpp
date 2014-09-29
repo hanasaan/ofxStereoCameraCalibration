@@ -3,9 +3,10 @@
 using namespace cv;
 using namespace ofxCv;
 
-void SingleCameraCalibration::setup(string defaultFilePath, float chessBoardSize) {
+void SingleCameraCalibration::setup(string defaultFilePath, float chessBoardSize, bool absolute) {
     ofxCv::Calibration::reset();
     bRequestCalibrate = false;
+    bAbsolute = absolute;
     calibrationFrameCount = 0;
     filePath = defaultFilePath;
     setPatternSize(10, 7);
@@ -13,14 +14,14 @@ void SingleCameraCalibration::setup(string defaultFilePath, float chessBoardSize
 }
 
 void SingleCameraCalibration::load() {
-    if (ofFile(filePath).exists()) {
-        ofxCv::Calibration::load(filePath);
+    if (ofFile(ofToDataPath(filePath, bAbsolute)).exists()) {
+        ofxCv::Calibration::load(filePath, bAbsolute);
     }
 }
 
 void SingleCameraCalibration::save() {
     if (size() > 3) {
-        ofxCv::Calibration::save(filePath);
+        ofxCv::Calibration::save(filePath, bAbsolute);
     }
 }
 
@@ -112,25 +113,28 @@ bool SingleCameraCalibration::calibrateWithFlag(int flag) {
 }
 
 //----------------------------------------------------------------------------------
-
-void StereoCameraCalibration::setup(string path, float chessBoardSize) {
+StereoCameraCalibration::StereoCameraCalibration() {
     bRequestCalibrate = false;
-    imagePointsA.clear();
-    imagePointsB.clear();
-    filePath = path;
-    
-    a.setup(path + "_a.yml", chessBoardSize);
-    b.setup(path + "_b.yml", chessBoardSize);
+    bAbsolute = false;
 }
 
-void StereoCameraCalibration::setup(string path, float chessBoardSize, string pathA, string pathB) {
+
+void StereoCameraCalibration::setup(string path, float chessBoardSize, bool absolute, string pathA, string pathB) {
     bRequestCalibrate = false;
+    bAbsolute = absolute;
     imagePointsA.clear();
     imagePointsB.clear();
     filePath = path;
     
-    a.setup(pathA, chessBoardSize);
-    b.setup(pathB, chessBoardSize);
+    if (pathA.empty()) {
+        pathA = path + "_a.yml";
+    }
+    if (pathB.empty()) {
+        pathB = path + "_b.yml";
+    }
+    
+    a.setup(pathA, chessBoardSize, absolute);
+    b.setup(pathB, chessBoardSize, absolute);
 }
 
 void StereoCameraCalibration::requestCalibrateNextFrame() {
@@ -170,38 +174,25 @@ void StereoCameraCalibration::update(ofPixels& pixelsA, ofPixels& pixelsB) {
 }
 
 void StereoCameraCalibration::draw(int x, int y, int w, int h) {
-    a.draw(x,       y, w/2, h/2);
-    b.draw(x + w/2, y, w/2, h/2);
-    a.drawUndistorted(x,       y + h/2, w/2, h/2);
-    b.drawUndistorted(x + w/2, y + h/2, w/2, h/2);
+    float aw = w/2;
+    float ah = aw * a.inputImage.getHeight() / a.inputImage.getWidth();
+    float bw = w/2;
+    float bh = bw * b.inputImage.getHeight() / b.inputImage.getWidth();
+    
+    a.draw(x,       y, aw, ah);
+    b.draw(x + w/2, y, bw, bh);
+    a.drawUndistorted(x,       y + h/2, aw, ah);
+    b.drawUndistorted(x + w/2, y + h/2, bw, bh);
 }
 
 void StereoCameraCalibration::load() {
     a.load();
     b.load();
-    {
-        cv::FileStorage fs(filePath, cv::FileStorage::READ);
+    if (ofFile(ofToDataPath(filePath, bAbsolute)).exists()) {
+        cv::FileStorage fs(ofToDataPath(filePath, bAbsolute), cv::FileStorage::READ);
         fs["rotation"] >> rotation;
         fs["translation"] >> translation;
-        
-        cv::Mat rot3x3;
-        if(rotation.rows == 3 && rotation.cols == 3) {
-            rot3x3 = rotation;
-        } else	{
-            cv::Rodrigues(rotation, rot3x3);
-        }
-        
-        const double* rm = rot3x3.ptr<double>(0);
-        const double* tm = translation.ptr<double>(0);
-        
-        transformAb.makeIdentityMatrix();
-        transformAb.set(rm[0], rm[3], rm[6], 0,
-                      rm[1], rm[4], rm[7], 0,
-                      rm[2], rm[5], rm[8], 0,
-                      tm[0], tm[1], tm[2], 1);
-        
-        // convert coordinate system opencv to opengl
-        transformAb.postMultScale(1, -1, -1);
+        updateTransformAb();
     }
 }
 
@@ -210,11 +201,32 @@ void StereoCameraCalibration::save() {
     b.save();
     
     if (imagePointsA.size() == imagePointsB.size() && imagePointsA.size() > 3) {
-        write(filePath, a.squareSize, a, b, imagePointsA, imagePointsB);
+        write(a.squareSize, a, b, imagePointsA, imagePointsB);
     }
 }
 
-void StereoCameraCalibration::write(const string& filepath, float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
+void StereoCameraCalibration::updateTransformAb() {
+    cv::Mat rot3x3;
+    if(rotation.rows == 3 && rotation.cols == 3) {
+        rot3x3 = rotation;
+    } else	{
+        cv::Rodrigues(rotation, rot3x3);
+    }
+    
+    const double* rm = rot3x3.ptr<double>(0);
+    const double* tm = translation.ptr<double>(0);
+    
+    transformAb.makeIdentityMatrix();
+    transformAb.set(rm[0], rm[3], rm[6], 0,
+                    rm[1], rm[4], rm[7], 0,
+                    rm[2], rm[5], rm[8], 0,
+                    tm[0], tm[1], tm[2], 1);
+    
+    // convert coordinate system opencv to opengl
+    transformAb.postMultScale(1, -1, -1);
+}
+
+void StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
            vector<vector<Point2f> >& imagePointsSrc, vector<vector<Point2f> >& imagePointsDst) {
     cv::Mat essentialMatrix;
     cv::Mat fundamentalMatrix;
@@ -238,8 +250,8 @@ void StereoCameraCalibration::write(const string& filepath, float squareSize, of
                         src.getDistortedIntrinsics().getImageSize(), rotation, translation,
                         essentialMatrix, fundamentalMatrix);
     
-    FileStorage fs(filepath, FileStorage::WRITE);
+    FileStorage fs(ofToDataPath(filePath, bAbsolute), FileStorage::WRITE);
     fs << "rotation" << rotation;
     fs << "translation" << translation;
-    
+    updateTransformAb();
 }

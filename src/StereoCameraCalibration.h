@@ -10,6 +10,7 @@ private:
     bool bRequestCalibrate;
     int  calibrationFrameCount;
     string filePath;
+    bool bAbsolute;
     
     ofImage inputImage;
     ofImage checkerBoardImage;
@@ -17,7 +18,7 @@ private:
     
     friend class StereoCameraCalibration;
 public:
-    void setup(string defaultFilePath, float chessBoardSize);
+    void setup(string defaultFilePath, float chessBoardSize, bool absolute = false);
     void load();
     void save();
     
@@ -36,6 +37,7 @@ private:
     SingleCameraCalibration a;
     SingleCameraCalibration b;
     bool bRequestCalibrate;
+    bool bAbsolute;
     
     vector<vector<cv::Point2f> > imagePointsA;
     vector<vector<cv::Point2f> > imagePointsB;
@@ -46,8 +48,8 @@ private:
     cv::Mat rotation;
     ofMatrix4x4 transformAb;
 public:
-    void setup(string path, float chessBoardSize);
-    void setup(string path, float chessBoardSize, string pathA, string pathB);
+    StereoCameraCalibration();
+    void setup(string path, float chessBoardSize, bool absolute = false, string pathA = "", string pathB = "");
     void update(ofPixels& pixelsA, ofPixels& pixelsB);
     void draw(int x, int y, int w, int h);
     
@@ -64,7 +66,8 @@ public:
     int size() {return imagePointsA.size();}
     
 private:
-    void write(const string& filepath, float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
+    void write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
                vector<vector<cv::Point2f> >& imagePointsSrc, vector<vector<cv::Point2f> >& imagePointsDst);
+    void updateTransformAb();
 };
 
