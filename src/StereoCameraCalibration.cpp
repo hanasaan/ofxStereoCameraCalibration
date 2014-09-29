@@ -185,17 +185,24 @@ void StereoCameraCalibration::load() {
         fs["rotation"] >> rotation;
         fs["translation"] >> translation;
         
-        ofVec3f stereoTranslate = ofVec3f(translation.at<double>(0,0), translation.at<double>(1,0), translation.at<double>(2,0));
-        cerr << "stereo translate is :" << stereoTranslate << endl;
+        cv::Mat rot3x3;
+        if(rotation.rows == 3 && rotation.cols == 3) {
+            rot3x3 = rotation;
+        } else	{
+            cv::Rodrigues(rotation, rot3x3);
+        }
         
-        ofMatrix4x4 rotMat;
-        rotMat.set(rotation.at<double>(0,0), rotation.at<double>(0,1), rotation.at<double>(0,2), 0,
-                   rotation.at<double>(1,0), rotation.at<double>(1,1), rotation.at<double>(1,2), 0,
-                   rotation.at<double>(2,0), rotation.at<double>(2,1), rotation.at<double>(2,2), 0,
-                   0, 0, 0, 1);
-        ofQuaternion stereoRotate = rotMat.getRotate();
-        transformAb.setTranslation(stereoTranslate);
-        transformAb.setRotate(stereoRotate);
+        const double* rm = rot3x3.ptr<double>(0);
+        const double* tm = translation.ptr<double>(0);
+        
+        transformAb.makeIdentityMatrix();
+        transformAb.set(rm[0], rm[3], rm[6], 0,
+                      rm[1], rm[4], rm[7], 0,
+                      rm[2], rm[5], rm[8], 0,
+                      tm[0], tm[1], tm[2], 1);
+        
+        // convert coordinate system opencv to opengl
+        transformAb.postMultScale(1, -1, -1);
     }
 }
 
