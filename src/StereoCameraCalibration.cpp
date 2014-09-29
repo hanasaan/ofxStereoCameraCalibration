@@ -10,7 +10,6 @@ void SingleCameraCalibration::setup(string defaultFilePath, float chessBoardSize
     filePath = defaultFilePath;
     setPatternSize(10, 7);
     setSquareSize(chessBoardSize);
-    squareSize = chessBoardSize;
 }
 
 void SingleCameraCalibration::load() {

@@ -10,7 +10,6 @@ private:
     bool bRequestCalibrate;
     int  calibrationFrameCount;
     string filePath;
-    float squareSize;
     
     ofImage inputImage;
     ofImage checkerBoardImage;
