@@ -223,7 +223,8 @@ void StereoCameraCalibration::draw(int x, int y, int w, int h) {
         ss << "Stereo Calib Info" << endl;
         ss << "Size   : " << size() << endl;
         ss << "Translate : " << translation << endl;
-        ss << "Rotate  : " << rotation;
+        ss << "Rotate  : " << rotation << endl;
+        ss << "SquareSize : " << a.getSquareSize();
         ofDrawBitmapStringHighlight(ss.str(), x + 10, y + h - 100, ofColor::red);
     }
 }
@@ -265,8 +266,8 @@ void StereoCameraCalibration::updateTransformAb() {
                     rm[2], rm[5], rm[8], 0,
                     tm[0], tm[1], tm[2], 1);
     
-    // convert coordinate system opencv to opengl
-    // transformAb.postMultScale(1, -1, -1);
+    transformAb.preMultScale(ofVec3f(1, -1, -1));
+    transformAb.postMultScale(ofVec3f(1, -1, -1));
 }
 
 void StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
