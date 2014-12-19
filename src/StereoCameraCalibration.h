@@ -39,7 +39,8 @@ private:
     SingleCameraCalibration b;
     bool bRequestCalibrate;
     bool bAbsolute;
-    
+	int notFoundFrameCount;
+	
     vector<vector<cv::Point2f> > imagePointsA;
     vector<vector<cv::Point2f> > imagePointsB;
     

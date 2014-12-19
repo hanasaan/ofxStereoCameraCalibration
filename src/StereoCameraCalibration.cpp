@@ -142,6 +142,7 @@ bool SingleCameraCalibration::calibrateWithFlag(int flag) {
 StereoCameraCalibration::StereoCameraCalibration() {
     bRequestCalibrate = false;
     bAbsolute = false;
+	notFoundFrameCount = 0;
 }
 
 
@@ -167,6 +168,7 @@ void StereoCameraCalibration::requestCalibrateNextFrame() {
     // valid only when both a and b are well calibrated.
     if (a.isCalibrated() && b.isCalibrated()) {
         bRequestCalibrate = true;
+		notFoundFrameCount = 0;
     } else {
         if (!a.isCalibrated()) {
             a.requestCalibrateNextFrame();
@@ -191,11 +193,15 @@ void StereoCameraCalibration::update(ofPixels& pixelsA, ofPixels& pixelsB) {
         bool foundB = b.findBoard(imgB, pointsB);
         
         
+		notFoundFrameCount++;
         if (foundA && foundB && pointsB.size() == pointsA.size()) {
-            bRequestCalibrate = false;
+			bRequestCalibrate = false;
             imagePointsA.push_back(pointsA);
             imagePointsB.push_back(pointsB);
         }
+		if (notFoundFrameCount > 3) {
+			bRequestCalibrate = false;
+		}
     }
 }
 
