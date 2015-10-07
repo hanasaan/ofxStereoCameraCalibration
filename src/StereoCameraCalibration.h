@@ -66,6 +66,8 @@ public:
     ofMatrix4x4 getTransformAb() {return transformAb;}
     bool isRequested() {return bRequestCalibrate;}
     int size() {return imagePointsA.size();}
+    const cv::Mat& getTranslation() const {return translation;}
+    const cv::Mat& getRotation() const {return rotation;}
     
 private:
     void write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
