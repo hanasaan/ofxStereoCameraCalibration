@@ -6,7 +6,7 @@
 class StereoCameraCalibration;
 
 class SingleCameraCalibration : public ofxCv::Calibration {
-private:
+protected:
     bool bRequestCalibrate;
     int  calibrationFrameCount;
     int notFoundFrameCount;
@@ -34,7 +34,7 @@ public:
 };
 
 class StereoCameraCalibration {
-private:
+protected:
     SingleCameraCalibration a;
     SingleCameraCalibration b;
     bool bRequestCalibrate;
