@@ -18,10 +18,16 @@ protected:
     ofImage undistortedImage;
     
     friend class StereoCameraCalibration;
+    
+    float scale;
+    float scale_min;
 public:
     void setup(string defaultFilePath, float chessBoardSize, bool absolute = false);
     void load();
     void save();
+    void setMinScale(float s) {
+        scale_min = s;
+    }
     
     void requestCalibrateNextFrame();
     

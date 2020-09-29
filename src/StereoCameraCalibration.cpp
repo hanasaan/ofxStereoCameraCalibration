@@ -12,6 +12,8 @@ void SingleCameraCalibration::setup(string defaultFilePath, float chessBoardSize
     filePath = defaultFilePath;
     setPatternSize(10, 7);
     setSquareSize(chessBoardSize);
+    scale = 1.0;
+    scale_min = 1.0;
 }
 
 void SingleCameraCalibration::load() {
@@ -46,23 +48,40 @@ void SingleCameraCalibration::update(ofPixels& pixels) {
     }
     
     if (bRequestCalibrate) {
-        cv::Mat img = toCv(inputImage);
+        cv::Mat img_orig = toCv(inputImage);
+        cv::Mat img;
+        if (scale == 1.0) {
+            img = img_orig;
+        } else {
+            cv::resize(img_orig, img, cv::Size(), scale, scale);
+        }
         vector<Point2f> pointBuf;
         bool found = findBoard(img, pointBuf);
+        for (auto& p : pointBuf) {
+            p.x /= scale;
+            p.y /= scale;
+        }
         Mat outImg = toCv(checkerBoardImage);
         img.copyTo(outImg);
-        cv::drawChessboardCorners(outImg, cv::Size(10, 7), pointBuf, found);
+        cv::drawChessboardCorners(outImg, getPatternSize(), pointBuf, found);
         
         if (found) {
             addedImageSize = img.size();
             imagePoints.push_back(pointBuf);
             calibrate();
             bRequestCalibrate = false;
+            cerr << "found at scale " << scale << endl;
+            scale = 1.0;
         } else {
             notFoundFrameCount++;
             if (notFoundFrameCount > 3) {
                 notFoundFrameCount = 0;
-                bRequestCalibrate = false;
+                if (scale <= scale_min) {
+                    scale = 1.0;
+                    bRequestCalibrate = false;
+                } else {
+                    scale *= 0.5;
+                }
             }
         }
         checkerBoardImage.update();
