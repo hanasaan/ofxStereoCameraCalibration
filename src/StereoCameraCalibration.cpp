@@ -66,7 +66,7 @@ void SingleCameraCalibration::update(ofPixels& pixels) {
         cv::drawChessboardCorners(outImg, getPatternSize(), pointBuf, found);
         
         if (found) {
-            addedImageSize = img.size();
+            addedImageSize = img_orig.size();
             imagePoints.push_back(pointBuf);
             calibrate();
             bRequestCalibrate = false;
@@ -75,6 +75,7 @@ void SingleCameraCalibration::update(ofPixels& pixels) {
         } else {
             notFoundFrameCount++;
             if (notFoundFrameCount > 3) {
+                cerr << "NOT found at scale " << scale << endl;
                 notFoundFrameCount = 0;
                 if (scale <= scale_min) {
                     scale = 1.0;
