@@ -184,9 +184,9 @@ void StereoCameraCalibration::setup(string path, float chessBoardSize, bool abso
     b.setup(pathB, chessBoardSize, absolute);
 }
 
-void StereoCameraCalibration::requestCalibrateNextFrame() {
+void StereoCameraCalibration::requestCalibrateNextFrame(bool force_stereo) {
     // valid only when both a and b are well calibrated.
-    if (a.isCalibrated() && b.isCalibrated()) {
+    if (force_stereo || (a.isCalibrated() && b.isCalibrated())) {
         bRequestCalibrate = true;
 		notFoundFrameCount = 0;
     } else {

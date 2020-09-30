@@ -64,7 +64,7 @@ public:
     void load();
     void save();
     
-    void requestCalibrateNextFrame();
+    void requestCalibrateNextFrame(bool force_stereo = false);
     
     SingleCameraCalibration& getARef() {return a;}
     SingleCameraCalibration& getBRef() {return b;}
