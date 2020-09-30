@@ -209,11 +209,35 @@ void StereoCameraCalibration::update(ofPixels& pixelsA, ofPixels& pixelsB) {
         cv::Mat imgA = toCv(a.inputImage);
         vector<Point2f> pointsA;
         bool foundA = a.findBoard(imgA, pointsA);
+        if (a.getMinScale() <= 0.5f && !foundA) {
+            const float scale = 0.5;
+            cv::Mat imgA_resized;
+            cv::resize(imgA, imgA_resized, cv::Size(), scale, scale);
+            foundA = a.findBoard(imgA_resized, pointsA);
+            if (foundA) {
+                for (auto& p : pointsA) {
+                    p.x /= scale;
+                    p.y /= scale;
+                }
+            }
+        }
         
         cv::Mat imgB = toCv(b.inputImage);
         vector<Point2f> pointsB;
         bool foundB = b.findBoard(imgB, pointsB);
-        
+        if (b.getMinScale() <= 0.5f && !foundB) {
+            const float scale = 0.5;
+            cv::Mat imgB_resized;
+            cv::resize(imgB, imgB_resized, cv::Size(), scale, scale);
+            foundB = b.findBoard(imgB_resized, pointsB);
+            if (foundB) {
+                for (auto& p : pointsB) {
+                    p.x /= scale;
+                    p.y /= scale;
+                }
+            }
+        }
+
         
 		notFoundFrameCount++;
         if (foundA && foundB && pointsB.size() == pointsA.size()) {

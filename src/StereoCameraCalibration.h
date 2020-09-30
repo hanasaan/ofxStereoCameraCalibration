@@ -28,6 +28,9 @@ public:
     void setMinScale(float s) {
         scale_min = s;
     }
+    float getMinScale() const {
+        return scale_min;
+    }
     
     void requestCalibrateNextFrame();
     
