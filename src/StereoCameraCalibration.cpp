@@ -163,6 +163,8 @@ StereoCameraCalibration::StereoCameraCalibration() {
     bRequestCalibrate = false;
     bAbsolute = false;
 	notFoundFrameCount = 0;
+    patternX = 10;
+    patternY = 7;
 }
 
 
@@ -255,6 +257,14 @@ void StereoCameraCalibration::draw(int x, int y, int w, int h) {
     }
 }
 
+void StereoCameraCalibration::setPatternSize(int x, int y)
+{
+    patternX = x;
+    patternY = y;
+    a.setPatternSize(x, y);
+    b.setPatternSize(x, y);
+}
+
 void StereoCameraCalibration::load() {
     a.load();
     b.load();
@@ -302,7 +312,7 @@ void StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, o
     cv::Mat fundamentalMatrix;
     vector<vector<Point3f> > objectPoints;
     
-    vector<Point3f> points = ofxCv::Calibration::createObjectPoints(cv::Size(10,7), squareSize, ofxCv::CHESSBOARD);
+    vector<Point3f> points = ofxCv::Calibration::createObjectPoints(cv::Size(patternX,patternY), squareSize, ofxCv::CHESSBOARD);
     objectPoints.resize(imagePointsSrc.size(), points);
     
     

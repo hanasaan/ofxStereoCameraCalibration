@@ -55,11 +55,16 @@ protected:
     cv::Mat translation;
     cv::Mat rotation;
     ofMatrix4x4 transformAb;
+    
+    int patternX;
+    int patternY;
 public:
     StereoCameraCalibration();
     void setup(string path, float chessBoardSize, bool absolute = false, string pathA = "", string pathB = "");
     void update(ofPixels& pixelsA, ofPixels& pixelsB);
     void draw(int x, int y, int w, int h);
+    
+    void setPatternSize(int x, int y);
     
     void load();
     void save();
