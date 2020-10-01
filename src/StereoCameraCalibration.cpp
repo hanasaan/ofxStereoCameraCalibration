@@ -226,7 +226,7 @@ void StereoCameraCalibration::update(ofPixels& pixelsA, ofPixels& pixelsB) {
         vector<Point2f> pointsB;
         bool foundB = b.findBoard(imgB, pointsB);
         if (b.getMinScale() <= 0.5f && !foundB) {
-            const float scale = 0.5;
+            float scale = 0.5;
             cv::Mat imgB_resized;
             cv::resize(imgB, imgB_resized, cv::Size(), scale, scale);
             foundB = b.findBoard(imgB_resized, pointsB);
@@ -234,6 +234,19 @@ void StereoCameraCalibration::update(ofPixels& pixelsA, ofPixels& pixelsB) {
                 for (auto& p : pointsB) {
                     p.x /= scale;
                     p.y /= scale;
+                }
+            } else {
+                float scale = 0.25;
+                cv::Mat imgB_resized;
+                cv::resize(imgB, imgB_resized, cv::Size(), scale, scale);
+                foundB = b.findBoard(imgB_resized, pointsB);
+                if (foundB) {
+                    for (auto& p : pointsB) {
+                        p.x /= scale;
+                        p.y /= scale;
+                    }
+                } else {
+                    cerr << "Not found in frame!!" << endl;
                 }
             }
         }
@@ -300,13 +313,15 @@ void StereoCameraCalibration::load() {
     }
 }
 
-void StereoCameraCalibration::save() {
+double StereoCameraCalibration::save() {
     a.save();
     b.save();
     
     if (imagePointsA.size() == imagePointsB.size() && imagePointsA.size() > 3) {
-        write(a.squareSize, a, b, imagePointsA, imagePointsB);
+        return write(a.squareSize, a, b, imagePointsA, imagePointsB);
     }
+    
+    return -1.0;
 }
 
 void StereoCameraCalibration::updateTransformAb() {
@@ -330,7 +345,7 @@ void StereoCameraCalibration::updateTransformAb() {
     transformAb.postMultScale(ofVec3f(1, -1, -1));
 }
 
-void StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
+double StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
            vector<vector<Point2f> >& imagePointsSrc, vector<vector<Point2f> >& imagePointsDst) {
     cv::Mat essentialMatrix;
     cv::Mat fundamentalMatrix;
@@ -347,7 +362,7 @@ void StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, o
     
     cerr << imagePointsDst.size() << endl;
     
-    cv::stereoCalibrate(objectPoints,
+    double rms = cv::stereoCalibrate(objectPoints,
                         imagePointsSrc, imagePointsDst,
                         cameraMatrixSrc, distCoeffsSrc,
                         cameraMatrixDst, distCoeffsDst,
@@ -358,4 +373,6 @@ void StereoCameraCalibration::write(float squareSize, ofxCv::Calibration& src, o
     fs << "rotation" << rotation;
     fs << "translation" << translation;
     updateTransformAb();
+    
+    return rms;
 }

@@ -70,7 +70,7 @@ public:
     void setPatternSize(int x, int y);
     
     void load();
-    void save();
+    double save();
     
     void requestCalibrateNextFrame(bool force_stereo = false);
     
@@ -84,7 +84,7 @@ public:
     const cv::Mat& getRotation() const {return rotation;}
     
 private:
-    void write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
+    double write(float squareSize, ofxCv::Calibration& src, ofxCv::Calibration& dst,
                vector<vector<cv::Point2f> >& imagePointsSrc, vector<vector<cv::Point2f> >& imagePointsDst);
     void updateTransformAb();
 };
