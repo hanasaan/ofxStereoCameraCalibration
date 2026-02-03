@@ -2,6 +2,7 @@
 
 using namespace cv;
 using namespace ofxCv;
+using namespace std;
 
 void SingleCameraCalibration::setup(string defaultFilePath, float chessBoardSize, bool absolute) {
     ofxCv::Calibration::reset();
